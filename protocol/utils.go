@@ -56,10 +56,40 @@ func DecodeDomain(domain []byte) string {
 	return string(decodedDomain)
 }
 
+func logResponseStatus(id, flag uint16) {
+	switch flag & 0xf {
+	case RES_OK:
+		log.Printf("[0x%04x] Response Status: OK\n", id)
+		return
+	case RES_FORMAT_ERROR:
+		log.Printf("[0x%04x] Response Status: FORMAT ERROR\n", id)
+		return
+	case RES_SERVER_FAILURE:
+		log.Printf("[0x%04x] Response Status: SERVER FAILURE\n", id)
+		return
+	case RES_NAME_ERROR:
+		log.Printf("[0x%04x] Response Status: NAME ERROR\n", id)
+		return
+	case RES_NOT_IMPLEMENTED:
+		log.Printf("[0x%04x] Response Status: NOT IMPLEMENTED\n", id)
+		return
+	case RES_REFUSED:
+		log.Printf("[0x%04x] Response Status: REFUSED\n", id)
+		return
+	default:
+		log.Printf("[0x%04x] Response Status: UNKNOWN\n", id)
+	}
+}
+
 func ParseHeader(header []byte) *DNSHeader {
+	id := binary.BigEndian.Uint16(header[:2])
+	flags := binary.BigEndian.Uint16(header[2:4])
+
+	logResponseStatus(id, flags)
+
 	return &DNSHeader{
-		ID:      binary.BigEndian.Uint16(header[:2]),
-		Flags:   binary.BigEndian.Uint16(header[2:4]),
+		ID:      id,
+		Flags:   flags,
 		QDCount: binary.BigEndian.Uint16(header[4:6]),
 		ANCount: binary.BigEndian.Uint16(header[6:8]),
 		NSCount: binary.BigEndian.Uint16(header[8:10]),
@@ -97,6 +127,10 @@ func fetchDomainFromResponse(response []byte, offset int) string {
 }
 
 func ParseAnswer(fullResponse, answers []byte, resourcesAmount uint16) []*DNSResource {
+	if resourcesAmount == 0 {
+		return []*DNSResource{}
+	}
+
 	offset := answers[0]
 	answers = answers[1:]
 	answersFrames := bytes.Split(answers, []byte{offset})
