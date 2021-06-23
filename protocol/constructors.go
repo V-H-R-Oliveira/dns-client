@@ -63,6 +63,10 @@ func (query *DNSQuery) SendRequest(writter io.Writer) {
 }
 
 func (response *DNSResponse) ToJSON(writter io.Writer) {
+	if response.Header.QDCount != 1 {
+		return
+	}
+
 	encoder := json.NewEncoder(writter)
 	encodedResponse := NewDNSStringResponse(response.Header, len(response.Answers))
 
