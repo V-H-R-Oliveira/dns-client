@@ -1,9 +1,16 @@
 # DNS Lookup
 
-A simple software that finds IPs addresses that belongs to a given domain using the DNS protocol.
+A simple client software for the DNS protocol.
+
+## Supported Features
+
+- Reverse DNS Queries.
+- Standard DNS Queries.
+- Support to Ipv4 and Ipv6.
+- Multiple inputs in a domain form or in an ip form.
 
 ## How it works
 
-Given an input domain, the program will query the google DNS server and it will output all the IPs and subdomains that belongs to the input domain.
+Given an input domain or an input ip, the program will query the google DNS server and it will output all the IPs and domains that belongs to the requested input.
 
 It does all this stuff using only the golang standard library and using the DNS protocol specification available in [rfc 1035](https://datatracker.ietf.org/doc/html/rfc1035) and [microsoft documentation](https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/dd197470(v=ws.10)?redirectedfrom=MSDN#dns-query-message-header)

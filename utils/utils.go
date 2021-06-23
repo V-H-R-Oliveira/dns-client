@@ -17,7 +17,7 @@ func GetInputDomains() []string {
 	cmdArgs := os.Args
 
 	if len(cmdArgs) < 2 {
-		log.Fatalf("Usage %s <domain1> <domain2> ... <domain n>\n", cmdArgs[0])
+		log.Fatalf("Usage %s <domain 1 | ip 1> <domain 2 | ip 2> ... <domain n | ip n>\nExamples: %s google.com microsoft.com 8.8.4.4\n", cmdArgs[0], cmdArgs[0])
 	}
 
 	return cmdArgs[1:]
