@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"log"
+	"net"
 	"os"
 	"sync"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/V-H-R-Oliveira/dns-client/utils"
 )
 
-func worker(wg *sync.WaitGroup, domain string, writter io.Writer) {
+func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writter io.Writer) {
 	defer wg.Done()
 
 	if writter == nil {
@@ -26,10 +27,20 @@ func worker(wg *sync.WaitGroup, domain string, writter io.Writer) {
 
 	defer socket.Close()
 
-	query := protocol.NewDNSQuery(domain)
+	queryClass := protocol.A
+
+	if ipv6 {
+		queryClass = protocol.AAAA
+	}
+
+	if reverseQuery {
+		queryClass = protocol.PTR
+	}
+
+	query := protocol.NewDNSQuery(domain, uint16(queryClass))
 	query.SendRequest(socket)
 
-	response := make([]byte, utils.MAXLENGTH)
+	response := make([]byte, utils.MAX_RESPONSE_LENGTH)
 
 	if _, err := socket.Read(response); err != nil {
 		log.Println("Response Error:", err)
@@ -40,15 +51,24 @@ func worker(wg *sync.WaitGroup, domain string, writter io.Writer) {
 	res.ToJSON(writter)
 }
 
-// TODO: Add support to Reverse DNS queries
 func main() {
 	inputs := utils.GetInputDomains()
 	var wg sync.WaitGroup
 
 	wg.Add(len(inputs))
+	reverseQuery := false
 
 	for _, domain := range inputs {
-		go worker(&wg, domain, nil)
+		ip := net.ParseIP(domain)
+
+		if ip != nil {
+			domain = utils.ReverseIPV4(ip)
+			reverseQuery = true
+		} else {
+			reverseQuery = false
+		}
+
+		go dnsQuery(&wg, domain, false, reverseQuery, nil)
 	}
 
 	wg.Wait()
