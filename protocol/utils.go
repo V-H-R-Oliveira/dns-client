@@ -25,7 +25,13 @@ func EncodeDomain(domain string) []byte {
 	s := ""
 
 	for _, slice := range splittedDomain {
-		s += fmt.Sprintf("%c%s", len(slice), slice)
+		label := fmt.Sprintf("%c%s", len(slice), slice)
+
+		if len(label) > MAX_LABEL_LENGTH {
+			continue
+		}
+
+		s += label
 	}
 
 	s += fmt.Sprintf("%c", 0)
@@ -81,11 +87,13 @@ func logResponseStatus(id, flag uint16) {
 	}
 }
 
-func ParseHeader(header []byte) *DNSHeader {
+func ParseHeader(header []byte, debug bool) *DNSHeader {
 	id := binary.BigEndian.Uint16(header[:2])
 	flags := binary.BigEndian.Uint16(header[2:4])
 
-	logResponseStatus(id, flags)
+	if debug {
+		logResponseStatus(id, flags)
+	}
 
 	return &DNSHeader{
 		ID:      id,
@@ -159,12 +167,12 @@ func ParseAnswer(fullResponse, answers []byte, resourcesAmount uint16) []*DNSRes
 	return resources
 }
 
-func ParseDNSResponse(response []byte) (*DNSQuery, *DNSResponse) {
+func ParseDNSResponse(response []byte, debug bool) (*DNSQuery, *DNSResponse) {
 	responsePayload := bytes.Trim(response, "\n\r\t\x00")
 	fullResponseCopy := responsePayload
 	header := responsePayload[:12]
 
-	dnsHeader := ParseHeader(header)
+	dnsHeader := ParseHeader(header, debug)
 	responsePayload = responsePayload[12:]
 
 	dnsQuestion, startAnswerOffset := ParseQuestion(responsePayload)
