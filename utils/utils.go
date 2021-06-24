@@ -49,12 +49,7 @@ func ReverseIPV6(ip net.IP) string {
 }
 
 func LoadEnv() {
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env not found.")
-		return
-	}
-
-	log.Println(".env loaded")
+	godotenv.Load()
 }
 
 func IsDebugMode() bool {
