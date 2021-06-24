@@ -11,7 +11,7 @@ import (
 	"github.com/V-H-R-Oliveira/dns-client/utils"
 )
 
-func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writter io.Writer) {
+func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writter io.Writer, debug bool) {
 	defer wg.Done()
 
 	if writter == nil {
@@ -47,28 +47,41 @@ func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writte
 		return
 	}
 
-	_, res := protocol.ParseDNSResponse(response)
+	_, res := protocol.ParseDNSResponse(response, debug)
 	res.ToJSON(writter)
 }
 
 func main() {
-	inputs := utils.GetInputDomains()
-	var wg sync.WaitGroup
+	utils.LoadEnv()
 
+	debug := utils.IsDebugMode()
+	inputs := utils.GetInputDomains()
+	reverseQuery, ipv6 := false, false
+
+	var wg sync.WaitGroup
 	wg.Add(len(inputs))
-	reverseQuery := false
 
 	for _, domain := range inputs {
 		ip := net.ParseIP(domain)
 
 		if ip != nil {
-			domain = utils.ReverseIPV4(ip)
+			if ip.IsLoopback() || ip.IsUnspecified() || ip.IsLinkLocalMulticast() || ip.IsLinkLocalUnicast() {
+				continue
+			}
+
+			if ip.DefaultMask() != nil {
+				domain = utils.ReverseIPV4(ip)
+			} else {
+				domain = utils.ReverseIPV6(ip)
+				ipv6 = true
+			}
+
 			reverseQuery = true
-		} else {
-			reverseQuery = false
 		}
 
-		go dnsQuery(&wg, domain, false, reverseQuery, nil)
+		go dnsQuery(&wg, domain, ipv6, reverseQuery, nil, debug)
+		ipv6 = false
+		reverseQuery = false
 	}
 
 	wg.Wait()

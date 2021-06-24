@@ -51,24 +51,26 @@ type DNSStringResponse struct {
 }
 
 const (
-	RESPONSE            = 1 << 15 // Request = 0, Response = 1
-	OPERATION           = 1<<14 | 1<<13 | 1<<12 | 1<<11
-	AUTH_ANSWER         = 1 << 10
-	TRUNCATION          = 1 << 9
-	REC_DISERED         = 1 << 8
-	REC_AVAILABLE       = 1 << 7
-	REVERSE_DNS_DOMAIN  = ".in-addr.arpa"
-	A                   = 1
-	AAAA                = 28
-	SOA                 = 6
-	NS                  = 2
-	CNAME               = 5
-	PTR                 = 12
-	QCLASS              = 1
-	RES_OK              = 0
-	RES_FORMAT_ERROR    = 1
-	RES_SERVER_FAILURE  = 2
-	RES_NAME_ERROR      = 3
-	RES_NOT_IMPLEMENTED = 4
-	RES_REFUSED         = 5
+	RESPONSE                = 1 << 15 // Request = 0, Response = 1
+	OPERATION               = 1<<14 | 1<<13 | 1<<12 | 1<<11
+	AUTH_ANSWER             = 1 << 10
+	TRUNCATION              = 1 << 9
+	REC_DISERED             = 1 << 8
+	REC_AVAILABLE           = 1 << 7
+	REVERSE_DNS_IPV4_DOMAIN = ".in-addr.arpa"
+	REVERSE_DNS_IPV6_DOMAIN = "ip6.arpa"
+	A                       = 1
+	AAAA                    = 28
+	SOA                     = 6
+	NS                      = 2
+	CNAME                   = 5
+	PTR                     = 12
+	QCLASS                  = 1
+	RES_OK                  = 0
+	RES_FORMAT_ERROR        = 1
+	RES_SERVER_FAILURE      = 2
+	RES_NAME_ERROR          = 3
+	RES_NOT_IMPLEMENTED     = 4
+	RES_REFUSED             = 5
+	MAX_LABEL_LENGTH        = 63
 )
