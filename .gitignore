@@ -53,6 +53,7 @@
 # Ignore all local history of files
 .history
 .ionide
+.env
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,go,git
 
