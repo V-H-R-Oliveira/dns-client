@@ -31,7 +31,6 @@ Standard DNS Query:
     "id": 59981,
     "questions": 1,
     "answers": 1,
-    "name_servers": 0
   },
   "answers": [
     {
@@ -57,7 +56,6 @@ Reverse DNS Query:
     "id": 44802,
     "questions": 1,
     "answers": 1,
-    "name_servers": 0
   },
   "answers": [
     {
