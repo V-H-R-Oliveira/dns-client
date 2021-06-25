@@ -19,7 +19,7 @@ func generateRequestID() uint16 {
 	return binary.BigEndian.Uint16(buffer)
 }
 
-func EncodeDomain(domain string) []byte {
+func encodeDomain(domain string) []byte {
 	cleanedDomain := strings.Trim(domain, "\n\r\t ")
 	splittedDomain := strings.Split(cleanedDomain, ".")
 	s := ""
@@ -38,7 +38,7 @@ func EncodeDomain(domain string) []byte {
 	return []byte(s)
 }
 
-func DecodeDomain(domain []byte) string {
+func decodeDomain(domain []byte) string {
 	decodedDomain := []byte{}
 	limit, counter := 0, 0
 
@@ -87,7 +87,7 @@ func logResponseStatus(id, flag uint16) {
 	}
 }
 
-func ParseHeader(header []byte, debug bool) *DNSHeader {
+func parseHeader(header []byte, debug bool) *DNSHeader {
 	id := binary.BigEndian.Uint16(header[:2])
 	flags := binary.BigEndian.Uint16(header[2:4])
 
@@ -105,7 +105,7 @@ func ParseHeader(header []byte, debug bool) *DNSHeader {
 	}
 }
 
-func ParseQuestion(question []byte) (*DNSQuestion, int) {
+func parseQuestion(question []byte) (*DNSQuestion, int) {
 	domainEnd := bytes.IndexByte(question, 0)
 
 	if domainEnd == -1 {
@@ -131,10 +131,10 @@ func fetchDomainFromResponse(response []byte, offset int) string {
 		log.Fatal("Failed to find the question domain end offset")
 	}
 
-	return DecodeDomain(response[:endDomainOffset])
+	return decodeDomain(response[:endDomainOffset])
 }
 
-func ParseAnswer(fullResponse, answers []byte, resourcesAmount uint16) []*DNSResource {
+func parseAnswer(fullResponse, answers []byte, resourcesAmount uint16) []*DNSResource {
 	if resourcesAmount == 0 {
 		return []*DNSResource{}
 	}
@@ -154,14 +154,14 @@ func ParseAnswer(fullResponse, answers []byte, resourcesAmount uint16) []*DNSRes
 			cache[domainOffset] = domain
 		}
 
-		resources[i] = &DNSResource{
-			Name:   domain,
-			Type:   binary.BigEndian.Uint16(frame[1:3]),
-			Class:  binary.BigEndian.Uint16(frame[3:5]),
-			TTL:    binary.BigEndian.Uint32(frame[5:9]),
-			Length: binary.BigEndian.Uint16(frame[9:11]),
-			Data:   frame[11:],
-		}
+		resourceType := binary.BigEndian.Uint16(frame[1:3])
+		resourceClass := binary.BigEndian.Uint16(frame[3:5])
+		ttl := binary.BigEndian.Uint32(frame[5:9])
+		length := binary.BigEndian.Uint16(frame[9:11])
+		data := frame[11:]
+
+		resourceHeader := NewDNSResourceHeader(domain, resourceType, resourceClass, ttl, length)
+		resources[i] = NewDNSResource(resourceHeader, data)
 	}
 
 	return resources
@@ -172,13 +172,13 @@ func ParseDNSResponse(response []byte, debug bool) (*DNSQuery, *DNSResponse) {
 	fullResponseCopy := responsePayload
 	header := responsePayload[:12]
 
-	dnsHeader := ParseHeader(header, debug)
+	dnsHeader := parseHeader(header, debug)
 	responsePayload = responsePayload[12:]
 
-	dnsQuestion, startAnswerOffset := ParseQuestion(responsePayload)
+	dnsQuestion, startAnswerOffset := parseQuestion(responsePayload)
 	responsePayload = responsePayload[startAnswerOffset:]
 
-	dnsAnswers := ParseAnswer(fullResponseCopy, responsePayload, dnsHeader.ANCount)
+	dnsAnswers := parseAnswer(fullResponseCopy, responsePayload, dnsHeader.ANCount)
 
 	return &DNSQuery{
 			Header:   dnsHeader,

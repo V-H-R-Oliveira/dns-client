@@ -5,10 +5,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"strconv"
 
 	"github.com/V-H-R-Oliveira/dns-client/protocol"
-	"github.com/joho/godotenv"
 )
 
 func CreateUDPDNSSocket() (net.Conn, error) {
@@ -46,24 +44,4 @@ func ReverseIPV6(ip net.IP) string {
 	}
 
 	return reversedIp + protocol.REVERSE_DNS_IPV6_DOMAIN
-}
-
-func LoadEnv() {
-	godotenv.Load()
-}
-
-func IsDebugMode() bool {
-	debugEnvVar, ok := os.LookupEnv("DEBUG")
-
-	if !ok || debugEnvVar == "" {
-		return false
-	}
-
-	debug, err := strconv.ParseBool(debugEnvVar)
-
-	if err != nil {
-		log.Fatal("DEBUG variable should be a valid boolean value.")
-	}
-
-	return debug
 }
