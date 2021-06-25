@@ -19,7 +19,7 @@ func NewDNSHeader() *DNSHeader {
 
 func NewDNSQuestion(domain string, class uint16) *DNSQuestion {
 	return &DNSQuestion{
-		QuestionName:  EncodeDomain(domain),
+		QuestionName:  encodeDomain(domain),
 		QuestionType:  class,
 		QuestionClass: QCLASS,
 	}
@@ -32,6 +32,24 @@ func NewDNSQuery(domain string, class uint16) *DNSQuery {
 	}
 }
 
+func NewDNSResourceHeader(name string, resourceType, class uint16,
+	ttl uint32, length uint16) *DNSResourceHeader {
+	return &DNSResourceHeader{
+		Name:   name,
+		Type:   resourceType,
+		Class:  class,
+		TTL:    ttl,
+		Length: length,
+	}
+}
+
+func NewDNSResource(header *DNSResourceHeader, data []byte) *DNSResource {
+	return &DNSResource{
+		Header: header,
+		Data:   data,
+	}
+}
+
 func NewDNSStringResponse(header *DNSHeader, answersLength int) *DNSStringResponse {
 	return &DNSStringResponse{
 		Header:  header,
@@ -39,14 +57,9 @@ func NewDNSStringResponse(header *DNSHeader, answersLength int) *DNSStringRespon
 	}
 }
 
-func NewDNSStringAnswer(name string, resourceType, class uint16,
-	ttl uint32, length uint16, data string) *DNSStringAnswer {
+func NewDNSStringAnswer(header *DNSResourceHeader, data string) *DNSStringAnswer {
 	return &DNSStringAnswer{
-		Name:   name,
-		Type:   resourceType,
-		Class:  class,
-		TTL:    ttl,
-		Length: length,
+		Header: header,
 		Data:   data,
 	}
 }
@@ -62,6 +75,17 @@ func (query *DNSQuery) SendRequest(writter io.Writer) {
 	writter.Write(buffer.Bytes())
 }
 
+func GetResponse(reader io.Reader) []byte {
+	response := make([]byte, MAX_RESPONSE_LENGTH)
+
+	if _, err := reader.Read(response); err != nil {
+		log.Println("Response Error:", err)
+		return []byte{}
+	}
+
+	return response
+}
+
 func (response *DNSResponse) ToJSON(writter io.Writer) {
 	if response.Header.QDCount != 1 {
 		return
@@ -73,17 +97,15 @@ func (response *DNSResponse) ToJSON(writter io.Writer) {
 	for i, resource := range response.Answers {
 		data := ""
 
-		if resource.Type == PTR {
-			data = DecodeDomain(resource.Data)
-		} else if resource.Type == AAAA || resource.Type == A {
+		if resource.Header.Type == PTR {
+			data = decodeDomain(resource.Data)
+		} else if resource.Header.Type == AAAA || resource.Header.Type == A {
 			ip := make(net.IP, len(resource.Data))
 			copy(ip, resource.Data)
 			data = ip.String()
 		}
 
-		stringRecord := NewDNSStringAnswer(resource.Name, resource.Type,
-			resource.Class, resource.TTL, resource.Length, data)
-
+		stringRecord := NewDNSStringAnswer(resource.Header, data)
 		encodedResponse.Answers[i] = stringRecord
 	}
 

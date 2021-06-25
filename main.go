@@ -11,7 +11,7 @@ import (
 	"github.com/V-H-R-Oliveira/dns-client/utils"
 )
 
-func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writter io.Writer, debug bool) {
+func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writter io.Writer) {
 	defer wg.Done()
 
 	if writter == nil {
@@ -40,21 +40,13 @@ func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writte
 	query := protocol.NewDNSQuery(domain, uint16(queryClass))
 	query.SendRequest(socket)
 
-	response := make([]byte, utils.MAX_RESPONSE_LENGTH)
+	response := protocol.GetResponse(socket)
+	_, res := protocol.ParseDNSResponse(response, false)
 
-	if _, err := socket.Read(response); err != nil {
-		log.Println("Response Error:", err)
-		return
-	}
-
-	_, res := protocol.ParseDNSResponse(response, debug)
 	res.ToJSON(writter)
 }
 
 func main() {
-	utils.LoadEnv()
-
-	debug := utils.IsDebugMode()
 	inputs := utils.GetInputDomains()
 	reverseQuery, ipv6 := false, false
 
@@ -79,7 +71,7 @@ func main() {
 			reverseQuery = true
 		}
 
-		go dnsQuery(&wg, domain, ipv6, reverseQuery, nil, debug)
+		go dnsQuery(&wg, domain, ipv6, reverseQuery, nil)
 		ipv6 = false
 		reverseQuery = false
 	}
