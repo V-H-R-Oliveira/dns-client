@@ -5,15 +5,12 @@ import (
 	"log"
 	"net"
 	"os"
-	"sync"
 
 	"github.com/V-H-R-Oliveira/dns-client/protocol"
 	"github.com/V-H-R-Oliveira/dns-client/utils"
 )
 
-func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writter io.Writer) {
-	defer wg.Done()
-
+func dnsQuery(domain string, ipv6, reverseQuery bool, writter io.Writer) {
 	if writter == nil {
 		writter = os.Stdout
 	}
@@ -38,7 +35,10 @@ func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writte
 	}
 
 	query := protocol.NewDNSQuery(domain, uint16(queryClass))
-	query.SendRequest(socket)
+
+	if err := query.SendRequest(socket); err != nil {
+		log.Fatalf("Failed to send a %s dns request due error: %s\n", domain, err.Error())
+	}
 
 	response := protocol.GetResponse(socket)
 	_, res := protocol.ParseDNSResponse(response, false)
@@ -49,9 +49,6 @@ func dnsQuery(wg *sync.WaitGroup, domain string, ipv6, reverseQuery bool, writte
 func main() {
 	inputs := utils.GetInputDomains()
 	reverseQuery, ipv6 := false, false
-
-	var wg sync.WaitGroup
-	wg.Add(len(inputs))
 
 	for _, domain := range inputs {
 		ip := net.ParseIP(domain)
@@ -71,10 +68,7 @@ func main() {
 			reverseQuery = true
 		}
 
-		go dnsQuery(&wg, domain, ipv6, reverseQuery, nil)
-		ipv6 = false
-		reverseQuery = false
+		dnsQuery(domain, ipv6, reverseQuery, nil)
+		ipv6, reverseQuery = false, false
 	}
-
-	wg.Wait()
 }

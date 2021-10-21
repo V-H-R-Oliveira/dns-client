@@ -13,7 +13,7 @@ func generateRequestID() uint16 {
 	buffer := make([]byte, 2)
 
 	if _, err := rand.Read(buffer); err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to generate a random request id due error:", err)
 	}
 
 	return binary.BigEndian.Uint16(buffer)

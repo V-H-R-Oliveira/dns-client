@@ -64,7 +64,7 @@ func NewDNSStringAnswer(header *DNSResourceHeader, data string) *DNSStringAnswer
 	}
 }
 
-func (query *DNSQuery) SendRequest(writter io.Writer) {
+func (query *DNSQuery) SendRequest(writter io.Writer) error {
 	buffer := &bytes.Buffer{}
 
 	binary.Write(buffer, binary.BigEndian, query.Header)
@@ -72,7 +72,8 @@ func (query *DNSQuery) SendRequest(writter io.Writer) {
 	binary.Write(buffer, binary.BigEndian, query.Question.QuestionType)
 	binary.Write(buffer, binary.BigEndian, query.Question.QuestionClass)
 
-	writter.Write(buffer.Bytes())
+	_, err := writter.Write(buffer.Bytes())
+	return err
 }
 
 func GetResponse(reader io.Reader) []byte {
